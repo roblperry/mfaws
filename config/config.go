@@ -54,7 +54,7 @@ func processConfig() {
 	professLoggingLevel()
 	processProfile()
 	processRegion()
-	processTargetProfile()
+	processSessionProfile()
 }
 
 func logSetEnvError(key string, err error) {
@@ -82,23 +82,22 @@ func processRegion() {
 	}
 }
 
-var TargetProfile string
+var SessionProfile string
 
-func processTargetProfile() {
-	TargetProfile = viper.GetString("aws.target_profile")
-	if len(TargetProfile) == 0 {
+func processSessionProfile() {
+	SessionProfile = viper.GetString("aws.session.profile")
+	if len(SessionProfile) == 0 {
 		profile := os.Getenv("AWS_PROFILE")
 		if len(profile) > 0 {
-			TargetProfile = profile + "_session"
+			SessionProfile = profile + "_session"
 		}
 	}
 
-	if len(TargetProfile) == 0 {
-		_, _ = fmt.Fprintf(os.Stderr, "Neither profile nor target profile set\n")
-		os.Exit(1)
+	if len(SessionProfile) == 0 {
+		log.Warnf("Neither profile nor session profile set\n")
+	} else {
+		log.Infof("Session profile %s", SessionProfile)
 	}
-
-	log.Infof("Targeting profile %s", TargetProfile)
 }
 
 func professLoggingLevel() {

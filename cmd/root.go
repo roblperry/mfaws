@@ -59,6 +59,14 @@ func init() {
 //noinspection GoUnusedParameter
 func rootCmdFunction(cmd *cobra.Command, args []string) {
 	log.Info("Starting")
+
+	if len(config.SessionProfile) == 0 {
+		_, _ = fmt.Fprintf(os.Stderr,
+			"I do not know the name of the profile to update or create.\n"+
+				"Try setting profile or session-profile\n")
+		os.Exit(1)
+	}
+
 	identity := getIdentity()
 
 	arn := identity.Arn
@@ -69,35 +77,36 @@ func rootCmdFunction(cmd *cobra.Command, args []string) {
 
 	token := getSessionToken(sn, mfa)
 
-	if len(config.TargetProfile) == 0 {
-		panic("Target Profile should be set")
+	if len(config.SessionProfile) == 0 {
+		panic("Session Profile should be set")
 	}
 
-	setAccessKeyId(config.TargetProfile, *token.Credentials.AccessKeyId)
-	setSecretAccessKey(config.TargetProfile, *token.Credentials.SecretAccessKey)
-	setSessionToken(config.TargetProfile, *token.Credentials.SessionToken)
+	setAccessKeyId(config.SessionProfile, *token.Credentials.AccessKeyId)
+	setSecretAccessKey(config.SessionProfile, *token.Credentials.SecretAccessKey)
+	setSessionToken(config.SessionProfile, *token.Credentials.SessionToken)
 
+	_, _ = fmt.Fprintf(os.Stdout, "%s profile updated\n", config.SessionProfile)
 	log.Info("Done")
 }
 
-func setSessionToken(targetProfile string, sessionToken string) {
-	cmd := exec.Command("aws", "configure", "--profile", targetProfile, "set", "aws_session_token", sessionToken)
+func setSessionToken(sessionProfile string, sessionToken string) {
+	cmd := exec.Command("aws", "configure", "--profile", sessionProfile, "set", "aws_session_token", sessionToken)
 	err := cmd.Run()
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "Failed to set session token: %s\n", err)
 	}
 }
 
-func setSecretAccessKey(targetProfile string, secretAccessKey string) {
-	cmd := exec.Command("aws", "configure", "--profile", targetProfile, "set", "aws_secret_access_key", secretAccessKey)
+func setSecretAccessKey(sessionProfile string, secretAccessKey string) {
+	cmd := exec.Command("aws", "configure", "--profile", sessionProfile, "set", "aws_secret_access_key", secretAccessKey)
 	err := cmd.Run()
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "Failed to set session token: %s\n", err)
 	}
 }
 
-func setAccessKeyId(targetProfile string, accessKeyId string) {
-	cmd := exec.Command("aws", "configure", "--profile", targetProfile, "set", "aws_access_key_id", accessKeyId)
+func setAccessKeyId(sessionProfile string, accessKeyId string) {
+	cmd := exec.Command("aws", "configure", "--profile", sessionProfile, "set", "aws_access_key_id", accessKeyId)
 	err := cmd.Run()
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "Failed to set session token: %s\n", err)
